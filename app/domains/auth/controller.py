@@ -5,6 +5,7 @@ from app.domains.auth.repository import AuthRepository
 from app.domains.auth.service import AuthService
 from app.domains.auth.schemas import LocalRegisterRequest, UserResponse, LocalLoginRequest, TokenResponse
 
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
