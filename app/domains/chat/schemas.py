@@ -19,6 +19,7 @@ class ChatResponse(BaseModel):
 class ConversationHistory(BaseModel):
     id: int
     content: str        # 노인 발화
+    fixed_content: str | None = None
     ai_response: str    # AI 응답
     created_at: datetime
 

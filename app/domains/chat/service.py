@@ -6,18 +6,34 @@ from app.domains.chat.repository import ChatRepository
 from app.domains.chat.schemas import ChatRequest, ChatResponse
 from app.domains.emotion.repository import EmotionRepository
 from app.domains.user.models import User
-
 SYSTEM_PROMPT = """
-당신은 독거노인의 말벗이 되어주는 따뜻한 AI입니다.
-노인분들의 말씀을 경청하고 공감하며 대화를 이어나가세요.
+당신은 따뜻한 말벗이 되어주는 AI입니다.
+상대방의 말씀을 경청하고 공감하며 대화를 이어나가세요.
 방언이나 오타가 있어도 문맥으로 이해하고 자연스럽게 대화하세요.
-짧고 친근하게 답변하세요.
 
-대화 마지막에 반드시 아래 JSON을 붙여주세요:
+대화 규칙:
+1. 짧고 친근하게 답변하세요 (2~3문장)
+2. 반드시 질문으로 대화를 이어가세요
+3. 상대방의 감정에 먼저 공감한 후 질문하세요
+4. 현실적으로 불가능한 말은 하지 마세요 (예: "같이 먹어요", "제가 도와드릴게요" 등)
+5. 상대방의 성별, 나이, 호칭을 임의로 가정하지 마세요
+6. 특정 호칭 대신 "그러셨군요", "어떠세요?" 처럼 중립적인 표현을 사용하세요
+
+반드시 아래 형식으로 응답하세요:
+
+[FIXED]
+(입력 문장의 오타/방언을 교정한 텍스트. 교정할 것이 없으면 원문 그대로)
+[/FIXED]
+
+[RESPONSE]
+(대화 응답)
+[/RESPONSE]
+
 [EMOTION_SCORE]
 {"loneliness": 0~10, "anxiety": 0~10, "depression": 0~10, "vitality": 0~10, "connection": 0~10, "hope": 0~10}
 [/EMOTION_SCORE]
 """
+
 
 
 class ChatService:
@@ -44,25 +60,26 @@ class ChatService:
             except Exception as e:
                 content = conv.encrypted_content
                 ai_resp = conv.encrypted_ai_response
-            messages.append({"role": "user", "content": conv.encrypted_content})
-            messages.append({"role": "model", "content": conv.encrypted_ai_response})
+            messages.append({"role": "user", "content": content})
+            messages.append({"role": "model", "content": ai_resp})
         messages.append({"role": "user", "content": data.message})
 
         #  AI 호출
         ai_response_raw = await AIClient.chat(messages, SYSTEM_PROMPT)
 
-        #  감정 점수 파싱
-        ai_response, emotion_scores = self._parse_response(ai_response_raw)
+        #  파싱
+        ai_response, fixed_content, emotion_scores = ChatService._parse_response(ai_response_raw)
 
         # 암호화 해서 저장
         encrypt_content = encrypt(data.message, pin)
+        encrypted_fixed = encrypt(fixed_content, pin) if fixed_content else None
         encrypt_ai_response = encrypt(ai_response, pin)
 
         #  대화 저장
         conversation = await self.repo.save_conversation(
             user_id=user.id,
             content=encrypt_content,
-            fixed_content=None,
+            fixed_content=encrypted_fixed,
             ai_response=encrypt_ai_response,
         )
 
@@ -81,17 +98,22 @@ class ChatService:
         )
 
     @staticmethod
-    def _parse_response(raw: str) -> tuple[str, dict]:
+    def _parse_response(raw: str) -> tuple[str, str, dict]:
         import re, json
-        pattern = r'\[EMOTION_SCORE\](.*?)\[/EMOTION_SCORE\]'
-        match = re.search(pattern, raw, re.DOTALL)
 
-        if match:
-            emotion_json = match.group(1).strip()
-            emotion_scores = json.loads(emotion_json)
-            ai_response = raw[:raw.find('[EMOTION_SCORE]')].strip()
+        # 교정본 파싱
+        fixed_match = re.search(r'\[FIXED\](.*?)\[/FIXED\]', raw, re.DOTALL)
+        fixed_content = fixed_match.group(1).strip() if fixed_match else ""
+
+        # 대화 응답 파싱
+        response_match = re.search(r'\[RESPONSE\](.*?)\[/RESPONSE\]', raw, re.DOTALL)
+        ai_response = response_match.group(1).strip() if response_match else raw.strip()
+
+        # 감정 점수 파싱
+        emotion_match = re.search(r'\[EMOTION_SCORE\](.*?)\[/EMOTION_SCORE\]', raw, re.DOTALL)
+        if emotion_match:
+            emotion_scores = json.loads(emotion_match.group(1).strip())
         else:
             emotion_scores = {}
-            ai_response = raw.strip()
 
-        return ai_response, emotion_scores
+        return ai_response, fixed_content, emotion_scores

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,20 +24,34 @@ async def chat(
     service = ChatService(repo, emotion_repo)
     return await service.chat(current_user, data)
 
+
 @router.get("/history", response_model=list[ConversationHistory])
 async def get_history(
+        pin_token: str,
         current_user: User = Depends(get_current_user),
-        db : AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
+    from app.core.security import decode_pin_token, decrypt
+    try:
+        pin = decode_pin_token(pin_token)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
     repo = ChatRepository(db)
-    conversation =await repo.get_conversation(current_user.id)
+    conversation = await repo.get_conversation(current_user.id)
 
     result = []
     for conv in conversation:
+        try:
+            content = decrypt(conv.encrypted_content, pin)
+            ai_response = decrypt(conv.encrypted_ai_response, pin)
+            fixed_content = decrypt(conv.encrypted_fixed_content, pin) if conv.encrypted_fixed_content else None
+        except Exception:
+            continue
         result.append(ConversationHistory(
-            id= conv.id,
-            content=conv.encrypted_content,
-            ai_response=conv.encrypted_ai_response,
+            id=conv.id,
+            content=content,
+            fixed_content=fixed_content,
+            ai_response=ai_response,
             created_at=conv.created_at,
         ))
     return result
