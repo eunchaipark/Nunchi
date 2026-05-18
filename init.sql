@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_plans (
     user_id INTEGER PRIMARY KEY REFERENCES users(id),
     plan VARCHAR(10) NOT NULL,
-    voice_limit_sec INTEGER NOT NULL
+    voice_limit_sec INTEGER NOT NULL,
+    text_limit INTEGER NOT NULL,
+    text_max_length INTEGER NOT NULL
 );
 
 -- 보호자 접근 권한
@@ -100,14 +102,18 @@ INSERT INTO users (kakao_id, name, has_pin) VALUES
 INSERT INTO users (kakao_id, name, has_pin) VALUES
 ('kakao_welfare_1', '최복지', false);
 
--- 플랜 설정
-INSERT INTO user_plans (user_id, plan, voice_limit_sec) VALUES
-(1, 'free', 120),
-(2, 'basic', 600),
-(3, 'free', 120),
-(4, 'free', 120),
-(5, 'free', 120),
-(6, 'free', 120);
+-- 플랜 설정 (id 1~9)
+INSERT INTO user_plans (user_id, plan, voice_limit_sec, text_limit, text_max_length) VALUES
+(1, 'free', 120, 5, 100),
+(2, 'basic', 600, 20, 300),
+(3, 'free', 120, 5, 100),
+(4, 'free', 120, 5, 100),
+(5, 'free', 120, 5, 100),
+(6, 'free', 120, 5, 100),
+(7, 'free', 120, 5, 100),
+(8, 'free', 120, 5, 100),
+(9, 'free', 120, 5, 100),
+(10, 'free', 120, 5, 100);
 
 -- 보호자 연결
 -- 김민준 → 김영수 담당
