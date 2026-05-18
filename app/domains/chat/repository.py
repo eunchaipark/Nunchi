@@ -1,7 +1,5 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.domains.auth.repository import AuthRepository
 from app.domains.chat.models import Conversation
 
 
