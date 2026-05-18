@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 60
 
     # 알림
-    SENDGRID_API_KEY: str = ""
+    GMAIL_USER: str = ""
+    GMAIL_APP_PASSWORD: str = ""
 
     class Config:
         env_file = ".env"
