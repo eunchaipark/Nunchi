@@ -14,7 +14,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     has_pin: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
-
+    pin_hash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
 class UserPlan(Base):
     __tablename__ = "user_plans"

@@ -10,6 +10,7 @@ class LocalLoginRequest(BaseModel):
     email: str
     password: str
 
+# 복호화를 위한 4자리
 class PinSetRequest(BaseModel):
     pin: str
 
@@ -27,3 +28,20 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ----- 회원 탈퇴 요청
+class DeleteAccountRequest(BaseModel):
+    password: str
+
+# -------비밀번호 변경
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+#-------pin 검증
+class PinVerifyRequest(BaseModel):
+    pin: str
+
+class PinTokenResponse(BaseModel):
+    pin_token: str
+    message: str
