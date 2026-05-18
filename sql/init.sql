@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_plans (
     user_id INTEGER PRIMARY KEY REFERENCES users(id),
     plan VARCHAR(10) NOT NULL,
-    voice_limit_sec INTEGER NOT NULL
+    voice_limit_sec INTEGER NOT NULL,
+    text_limit INTEGER NOT NULL,
+    text_max_length INTEGER NOT NULL
 );
 
 -- 보호자 접근 권한
@@ -110,17 +112,17 @@ INSERT INTO users (email, password_hash, name, has_pin) VALUES
 ('newuser@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TsClt7y4Gf7WRPOcAFAMGxJVUkKe', '새유저', false);
 
 -- 플랜 설정 (id 1~9)
-INSERT INTO user_plans (user_id, plan, voice_limit_sec) VALUES
-(1, 'free', 120),
-(2, 'basic', 600),
-(3, 'free', 120),
-(4, 'free', 120),
-(5, 'free', 120),
-(6, 'free', 120),
-(7, 'free', 120),
-(8, 'free', 120),
-(9, 'free', 120),
-(10,'free',120);
+INSERT INTO user_plans (user_id, plan, voice_limit_sec, text_limit, text_max_length) VALUES
+(1, 'free', 120, 5, 100),
+(2, 'basic', 600, 20, 300),
+(3, 'free', 120, 5, 100),
+(4, 'free', 120, 5, 100),
+(5, 'free', 120, 5, 100),
+(6, 'free', 120, 5, 100),
+(7, 'free', 120, 5, 100),
+(8, 'free', 120, 5, 100),
+(9, 'free', 120, 5, 100),
+(10, 'free', 120, 5, 100);
 
 -- 보호자 연결
 -- 김민준(4) → 김영수(1) 담당
