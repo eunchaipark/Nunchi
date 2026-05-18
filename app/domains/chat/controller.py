@@ -8,6 +8,7 @@ from app.domains.chat.repository import ChatRepository
 from app.domains.chat.schemas import ChatRequest, ChatResponse, ConversationHistory
 from app.domains.chat.service import ChatService
 from app.domains.emotion.repository import EmotionRepository
+from app.domains.notification.repository import NotificationRepository
 from app.domains.user.models import User
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -21,7 +22,8 @@ async def chat(
 ):
     repo = ChatRepository(db)
     emotion_repo = EmotionRepository(db)
-    service = ChatService(repo, emotion_repo)
+    notification_repo = NotificationRepository(db)
+    service = ChatService(repo, emotion_repo, notification_repo)
     return await service.chat(current_user, data)
 
 

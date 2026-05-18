@@ -5,7 +5,7 @@ from app.domains.auth.controller import router as auth_router
 from app.domains.chat.controller import router as chat_router
 from app.domains.emotion.controller import router as emotion_router
 from app.domains.notification.controller import router as notification_router
-
+from app.domains.usage.controller import router as usage_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +26,8 @@ app.include_router(chat_router)  # CHAT
 app.include_router(emotion_router)
 
 app.include_router(notification_router)
+
+app.include_router(usage_router)
 
 
 @app.get("/")

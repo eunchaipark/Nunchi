@@ -5,6 +5,8 @@ from app.core.security import decode_pin_token, decrypt, encrypt
 from app.domains.chat.repository import ChatRepository
 from app.domains.chat.schemas import ChatRequest, ChatResponse
 from app.domains.emotion.repository import EmotionRepository
+from app.domains.notification.repository import NotificationRepository
+from app.domains.notification.service import NotificationService
 from app.domains.user.models import User
 SYSTEM_PROMPT = """
 당신은 따뜻한 말벗이 되어주는 AI입니다.
@@ -37,9 +39,10 @@ SYSTEM_PROMPT = """
 
 
 class ChatService:
-    def __init__(self, repo: ChatRepository, emotion_repo: EmotionRepository):
+    def __init__(self, repo: ChatRepository, emotion_repo: EmotionRepository, notification_repo: NotificationRepository):
         self.repo = repo
         self.emotion_repo = emotion_repo
+        self.notification_repo = notification_repo
 
     async def chat(self, user: User, data: ChatRequest) -> ChatResponse:
 
@@ -85,11 +88,15 @@ class ChatService:
 
         #  감정 점수 저장
         if emotion_scores:
-            await self.emotion_repo.save_emotion(
+            saved_emotion = await self.emotion_repo.save_emotion(
                 user_id=user.id,
                 conversation_id=conversation.id,
                 scores=emotion_scores,
             )
+            # 7. 위험도 체크 후 알림
+            notification_service = NotificationService(self.notification_repo)
+            await notification_service.check_and_notify(user.id, saved_emotion.overall_risk)
+
 
         return ChatResponse(
             id=conversation.id,

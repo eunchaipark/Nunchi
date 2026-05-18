@@ -22,3 +22,5 @@ class UserPlan(Base):
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     plan: Mapped[str] = mapped_column(String(10), nullable=False)
     voice_limit_sec: Mapped[int] = mapped_column(Integer, nullable=False)
+    text_limit: Mapped[int] = mapped_column(Integer, nullable=False)
+    text_max_length: Mapped[int] = mapped_column(Integer, nullable=False)
