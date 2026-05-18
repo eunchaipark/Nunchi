@@ -8,6 +8,9 @@ from app.domains.emotion.repository import EmotionRepository
 from app.domains.notification.repository import NotificationRepository
 from app.domains.notification.service import NotificationService
 from app.domains.user.models import User
+from app.domains.usage.repository import UsageRepository
+from app.domains.usage.service import UsageService
+
 SYSTEM_PROMPT = """
 당신은 따뜻한 말벗이 되어주는 AI입니다.
 상대방의 말씀을 경청하고 공감하며 대화를 이어나가세요.
@@ -37,14 +40,35 @@ SYSTEM_PROMPT = """
 """
 
 
-
 class ChatService:
-    def __init__(self, repo: ChatRepository, emotion_repo: EmotionRepository, notification_repo: NotificationRepository):
+    def __init__(
+        self,
+        repo: ChatRepository,
+        emotion_repo: EmotionRepository,
+        notification_repo: NotificationRepository,
+        usage_repo: UsageRepository
+    ):
         self.repo = repo
         self.emotion_repo = emotion_repo
         self.notification_repo = notification_repo
+        self.usage_repo = usage_repo
 
     async def chat(self, user: User, data: ChatRequest) -> ChatResponse:
+
+        # 글자 수 체크
+        if not data.voice_seconds and len(data.message) > 0:
+            plan = await self.usage_repo.get_plan(user.id)
+            if plan and len(data.message) > plan.text_max_length:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"텍스트는 {plan.text_max_length}자 이하로 입력해주세요"
+                )
+
+        # 사용량 체크
+        usage_service = UsageService(self.usage_repo)
+        quota = await usage_service.check_quota(user.id, data.voice_seconds)
+        if not quota.can_use:
+            raise HTTPException(status_code=429, detail=quota.reason)
 
         try:
             pin = decode_pin_token(data.pin_token)
@@ -97,6 +121,8 @@ class ChatService:
             notification_service = NotificationService(self.notification_repo)
             await notification_service.check_and_notify(user.id, saved_emotion.overall_risk)
 
+        # 사용량 차감
+        await usage_service.consume(user.id, data.voice_seconds)
 
         return ChatResponse(
             id=conversation.id,

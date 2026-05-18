@@ -5,6 +5,7 @@ from datetime import datetime
 class ChatRequest(BaseModel):
     message: str
     pin_token: str
+    voice_seconds: int = 0
 
 
 class ChatResponse(BaseModel):

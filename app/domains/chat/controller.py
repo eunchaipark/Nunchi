@@ -9,6 +9,7 @@ from app.domains.chat.schemas import ChatRequest, ChatResponse, ConversationHist
 from app.domains.chat.service import ChatService
 from app.domains.emotion.repository import EmotionRepository
 from app.domains.notification.repository import NotificationRepository
+from app.domains.usage.repository import UsageRepository
 from app.domains.user.models import User
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -23,9 +24,9 @@ async def chat(
     repo = ChatRepository(db)
     emotion_repo = EmotionRepository(db)
     notification_repo = NotificationRepository(db)
-    service = ChatService(repo, emotion_repo, notification_repo)
+    usage_repo = UsageRepository(db)
+    service = ChatService(repo, emotion_repo, notification_repo, usage_repo)
     return await service.chat(current_user, data)
-
 
 @router.get("/history", response_model=list[ConversationHistory])
 async def get_history(
