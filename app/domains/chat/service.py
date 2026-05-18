@@ -1,4 +1,7 @@
+from fastapi import HTTPException
+
 from app.core.ai_client import AIClient
+from app.core.security import decode_pin_token, decrypt, encrypt
 from app.domains.chat.repository import ChatRepository
 from app.domains.chat.schemas import ChatRequest, ChatResponse
 from app.domains.emotion.repository import EmotionRepository
@@ -23,30 +26,47 @@ class ChatService:
         self.emotion_repo = emotion_repo
 
     async def chat(self, user: User, data: ChatRequest) -> ChatResponse:
+
+        try:
+            pin = decode_pin_token(data.pin_token)
+        except (ValueError, TypeError) as e:
+            raise HTTPException(status_code=401, detail=str(e))
+
         # 1. 최근 5턴 가져오기 (슬라이딩 윈도우)
         recent = await self.repo.get_recent_conversations(user.id)
 
-        # 2. 메시지 컨텍스트 조립
+        # 2. 메시지 컨텍스트 조립 --> 복호화 해서 AI.에 전달
         messages = []
         for conv in recent:
+            try:
+                content = decrypt(conv.encrypted_content, pin)
+                ai_resp = decrypt(conv.encrypted_ai_response, pin)
+            except Exception as e:
+                content = conv.encrypted_content
+                ai_resp = conv.encrypted_ai_response
             messages.append({"role": "user", "content": conv.encrypted_content})
             messages.append({"role": "model", "content": conv.encrypted_ai_response})
         messages.append({"role": "user", "content": data.message})
 
-        # 3. AI 호출
+        #  AI 호출
         ai_response_raw = await AIClient.chat(messages, SYSTEM_PROMPT)
 
-        # 4. 감정 점수 파싱
+        #  감정 점수 파싱
         ai_response, emotion_scores = self._parse_response(ai_response_raw)
 
-        # 5. 대화 저장
+        # 암호화 해서 저장
+        encrypt_content = encrypt(data.message, pin)
+        encrypt_ai_response = encrypt(ai_response, pin)
+
+        #  대화 저장
         conversation = await self.repo.save_conversation(
             user_id=user.id,
-            content=data.message,
+            content=encrypt_content,
             fixed_content=None,
-            ai_response=ai_response,
+            ai_response=encrypt_ai_response,
         )
-        # 6. 감정 점수 저장
+
+        #  감정 점수 저장
         if emotion_scores:
             await self.emotion_repo.save_emotion(
                 user_id=user.id,
