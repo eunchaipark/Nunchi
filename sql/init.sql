@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     kakao_id VARCHAR UNIQUE,
     email VARCHAR UNIQUE,
     password_hash VARCHAR,
+    pin_hash VARCHAR,
     name VARCHAR NOT NULL,
     has_pin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
@@ -105,7 +106,8 @@ INSERT INTO users (kakao_id, name, has_pin) VALUES
 INSERT INTO users (email, password_hash, name, has_pin) VALUES
 ('elder_test@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TsClt7y4Gf7WRPOcAFAMGxJVUkKe', '테스트노인', true),
 ('guardian_test@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TsClt7y4Gf7WRPOcAFAMGxJVUkKe', '테스트보호자', false),
-('welfare_test@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TsClt7y4Gf7WRPOcAFAMGxJVUkKe', '테스트복지사', false);
+('welfare_test@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TsClt7y4Gf7WRPOcAFAMGxJVUkKe', '테스트복지사', false),
+('newuser@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TsClt7y4Gf7WRPOcAFAMGxJVUkKe', '새유저', false);
 
 -- 플랜 설정 (id 1~9)
 INSERT INTO user_plans (user_id, plan, voice_limit_sec) VALUES
@@ -117,7 +119,8 @@ INSERT INTO user_plans (user_id, plan, voice_limit_sec) VALUES
 (6, 'free', 120),
 (7, 'free', 120),
 (8, 'free', 120),
-(9, 'free', 120);
+(9, 'free', 120),
+(10,'free',120);
 
 -- 보호자 연결
 -- 김민준(4) → 김영수(1) 담당
