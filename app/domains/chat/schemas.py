@@ -4,6 +4,7 @@ from datetime import datetime
 
 class ChatRequest(BaseModel):
     message: str
+    pin_token: str
 
 
 class ChatResponse(BaseModel):
