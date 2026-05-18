@@ -25,3 +25,34 @@ class AuthRepository:
         self.db.add(user)  # 세션에 객체를 등록한다 즉 DB에 넣을 준비를 해라
         await self.db.flush() #세션에 등록된 변경 사항을 DB에 즉시 반영 (커밋이 아니다)
         return user
+
+    async def update_pin(self, user_id:int, pin_hash:  str) -> None:
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user= result.scalar_one_or_none()
+        if user:
+            user.pin_hash = pin_hash
+            user.has_pin = True
+            await self.db.flush()
+
+    # 회원 탈퇴
+    async def delete_user(self,user_id: int) -> None:
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            await self.db.delete(user)
+            await self.db.flush()
+
+    #---비밀번호 변경
+    async def update_password(self, user_id: int, new_password: str) -> None:
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.password_hash = new_password
+            await self.db.flush()
+
